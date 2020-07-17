@@ -1,0 +1,81 @@
+---
+- name: Get my public IP
+  ipify_facts:
+
+- name: Install jq
+  apt:
+    name: jq
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: "Check if REST_API"
+  uri:
+    url: http://localhost:8080/colibri/stats
+  failed_when: false
+  register: colibristats
+
+- debug: msg="Page returned status - {{ colibristats.status }}"
+  when: colibristats.status is defined
+
+- name: Check the number of active conferences
+  uri:
+    url: http://localhost:8080/colibri/stats
+  register: conferences
+  failed_when: false
+  when: colibristats.status is defined and colibristats.status == 200 # needed to check if the stats are running.
+
+- debug: msg={{ conferences.json['conferences'] }}
+  when: conferences.json is defined
+
+- debug: msg={{ not ( conferences.json is defined and conferences.json['conferences'] == 0 ) }}
+  when: conferences.json is defined
+
+- debug: msg={{ not ( conferences.json is defined and conferences.json['conferences'] == 0 ) and not ( colibristats.status is defined and colibristats.status != 200 )  }}  # noqa 204
+  when: conferences.json is defined
+
+- name: Generate a Fail when not restarted
+  fail:
+    msg: "Videobridge server was not restarted! Configs not applied!"
+  ignore_errors: yes
+  when:  ( not ( conferences.json is defined and conferences.json['conferences'] == 0 ) and not ( colibristats.status is defined and colibristats.status != 200 ) ) # noqa 204
+
+- name: add videobridge config
+  become: yes
+  tags:
+    - conf
+  template:
+    src: sip-communicator.properties.j2
+    dest: /etc/jitsi/videobridge/sip-communicator.properties
+    mode: 0644]
+  notify: restart jitsi-videobridge
+
+- name: add videobridge default config
+  become: yes
+  tags:
+    - conf
+  template:
+    src: videobridge_config.j2
+    dest: /etc/jitsi/videobridge/config
+    mode: 0644
+  notify: restart jitsi-videobridge
+
+- name : Change jitsi-videobridge memory value
+  lineinfile:
+    line: "VIDEOBRIDGE_MAX_MEMORY=6144m"
+    insertafter: "^# VIDEOBRIDGE_MAX_MEMORY=3072m"
+    path: /usr/share/jitsi-videobridge/lib/videobridge.rc
+    state: absent
+  notify: restart jitsi-videobridge
+
+- name: cron to restart Vidobridge nightly
+  cron:
+    name: restart jitsi-videobridge
+    hour: "4"
+    minute: "{{ 60 |random(seed=inventory_hostname) }}"
+    user: root
+    job: "/usr/sbin/service jitsi-videobridge restart  >> /var/log/jitsi/restart_videobridge.log 2>&1"
+    cron_file: restart_jitsi-videobridge
+  when: videobridge_only
+  tags:
+    - cron

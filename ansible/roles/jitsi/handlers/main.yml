@@ -1,0 +1,23 @@
+---
+# handlers for apache2 service
+
+- name: restart jicofo
+  service:
+    name: jicofo
+    state: restarted
+
+- name: restart prosody
+  service:
+    name: prosody
+    state: restarted
+
+- name: restart jigasi
+  service:
+    name: jigasi
+    state: restarted
+
+- name: reload systemctl
+  systemd:
+    daemon_reload: yes
+  tags:
+    - jitsi

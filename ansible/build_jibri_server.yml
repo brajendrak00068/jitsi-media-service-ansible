@@ -1,0 +1,73 @@
+---
+###
+# * Check the vars below and adjust "ORGANISATION", e.g. jitsi_organisation: "epfl"
+# * Source you openstack project credentials (normally jitsi-frontends)
+# * Run the playbook:
+#     ansible-playbook build_jitsi_server.yml -D
+###
+- name: Provision instance in AWS
+  hosts: localhost
+  vars_files:
+    - group_vars/all/vars.yaml
+  tasks:
+    - name: create security group for ssh
+      ec2_group:
+        name: SSH
+        description: SSH security group
+        vpc_id: "{{ ec2_vpcid }}"
+        region: "{{ ec2_region }}"
+        rules:
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: "0.0.0.0/0"
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ipv6: ::/0
+        tags: "{'name':'SSH', 'env':'production'}"
+
+    - name: Create subnet for jibri server
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{ ec2_vpcid }}"
+        cidr: 10.0.6.0/24
+        tags:
+          Name: jibri
+      register: jibri_subnet
+
+    - name: Launch jibri meet instance
+      ec2:
+        keypair: "{{ ec2_keypair }}"
+        group: ['SSH']
+        type: t2.medium
+        image: ami-02d55cb47e83a99a0
+        region: "{{ ec2_region }}"
+        instance_tags:
+          name: jibri
+          env: production
+        exact_count: 1
+        count_tag:
+          name: jibri
+          env: production
+        wait: true
+        vpc_subnet_id: "{{ jibri_subnet.subnet.id }}"
+      when: not ansible_check_mode
+      register: ec2
+
+    - name: Create volume ec2 volume
+      ec2_vol:
+        instance: "{{ item.id }}"
+        volume_size: "20"
+        region: "{{ ec2_region }}"
+        delete_on_termination: true
+        device_name: /dev/sdf
+      loop: "{{ ec2.instances }}"
+      register: ec2_vol
+      tags: "{'name':'jibri', 'env':'production'}"
+
+    - debug:
+        msg:
+          - "Server private IPv4: {{ item.private_ip }}"
+      when: not ansible_check_mode
+      loop: "{{ ec2.instances }}"

@@ -1,0 +1,24 @@
+---
+# select which version of Jitsi to install. Valid:
+#  `stable` for the latest stable release
+#  `nightly` for the latest nightly release
+
+jitsi_version: nightly
+jitsi_meet_videobridge_secret: 'vb_secret'
+jitsi_meet_videobridge_password: 'vb_password'
+jitsi_meet_videobridge_port: 5347
+jitsi_meet_videobridge_loglevel: INFO
+
+jitsi_meet_apt_repos:
+  stable:
+    repo_url: 'deb https://download.jitsi.org/ stable/'
+  unstable:
+    repo_url: 'deb https://download.jitsi.org/ unstable/'
+
+# These debconf settings represent answers to interactive prompts during installation
+# of the jitsi-meet deb package. If you use custom SSL certs, you may have to set more options.
+jitsi_meet_debconf_settings:
+  - name: jitsi-videobridge
+      question: jitsi-videobridge/jvb-hostname
+      value: "{{ jitsi_fqdn }}"
+      vtype: string

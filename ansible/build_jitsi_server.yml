@@ -1,0 +1,145 @@
+
+- name: Provision instance in AWS
+  hosts: localhost
+  vars_files:
+    - group_vars/all/vars.yaml
+  tasks:
+    - name: create security group for jitsi-meet
+      ec2_group:
+        name: jitsi-meet
+        description: security group jitsi-meet
+        vpc_id: "{{ ec2_vpcid }}"
+        region: "{{ ec2_region }}"
+        rules:
+          - proto: tcp
+            from_port: 5222
+            to_port: 5222
+            cidr_ip: "10.0.0.0/16"
+          - proto: tcp
+            from_port: 5222
+            to_port: 5222  #jicofo port
+            cidr_ipv6: "2406:da1a:670:2600::/56"
+          - proto: tcp
+            from_port: 5347
+            to_port: 5347   #videobridge port
+            cidr_ip: "10.0.0.0/16"
+          - proto: tcp
+            from_port: 5347
+            to_port: 5347
+            cidr_ipv6: "2406:da1a:670:2600::/56"
+        tags: "{'name':'jitsi-meet', 'env':'production'}"
+
+
+    - name: create security group for ssh
+      ec2_group:
+        name: SSH
+        description: SSH security group
+        vpc_id: "{{ ec2_vpcid }}"
+        region: "{{ ec2_region }}"
+        rules:
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: "0.0.0.0/0"
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ipv6: ::/0
+        tags: "{'name':'SSH', 'env':'production'}"
+
+
+    - name: create security group for jitsi-jibri
+      ec2_group:
+        name: jitsi-jibri
+        description: security group jitsi-jibri
+        vpc_id: "{{ ec2_vpcid }}"
+        region: "{{ ec2_region }}"
+        rules:
+          - proto: tcp
+            from_port: 5222
+            to_port: 5222
+            cidr_ip: "10.0.0.0/16"
+          - proto: tcp
+            from_port: 5222
+            to_port: 5222
+            cidr_ipv6: "2406:da1a:670:2600::/56"
+        tags: "{'name':'jitsi-jibri', 'env':'production'}"
+
+    - name: create security group for jitsi-jigasi
+      ec2_group:
+        name: jitsi-jigasi
+        description: security group jitsi-jigasi
+        vpc_id: "{{ ec2_vpcid }}"
+        region: "{{ ec2_region }}"
+        rules:
+          - proto: udp
+            from_port: 20000
+            to_port: 20050
+            cidr_ip: "0.0.0.0/0"
+          - proto: udp
+            from_port: 20000
+            to_port: 20050
+            cidr_ipv6: "::/0"
+        tags: "{'name':'jitsi-jigasi', 'env':'production'}"
+
+    - name: create security for http
+      ec2_group:
+        name: http
+        description: security group http
+        vpc_id: "{{ ec2_vpcid }}"
+        region: "{{ ec2_region }}"
+        rules:
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: "0.0.0.0/0"
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ipv6: ::/0
+        tags: "{'name':'http', 'env':'production'}"
+
+    - name: Create subnet for jitsi meet servers
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{ ec2_vpcid }}"
+        cidr: 10.0.5.0/24
+        tags:
+          Name: jitsi meet subnet
+      register: jitsi_meet_subnet
+
+    - name: Launch jitsi meet instance
+      ec2:
+        keypair: "{{ ec2_keypair }}"
+        group: ['SSH', 'jitsi-meet', 'jitsi-jibri', 'http', 'jitsi-jigasi']
+        type: c5.large
+        image: ami-02d55cb47e83a99a0
+        region: "{{ ec2_region }}"
+        instance_tags:
+           name: jitsi-meet
+           env: production
+        exact_count: 1
+        count_tag:
+          name: jitsi-meet
+          env: production
+        wait: true
+        vpc_subnet_id: "{{ jitsi_meet_subnet.subnet.id }}"
+      when: not ansible_check_mode
+      register: ec2
+
+    - name: Create volume ec2 volume
+      ec2_vol:
+        instance: "{{ item.id }}"
+        volume_size: "20"
+        region: "{{ ec2_region }}"
+        device_name: /dev/sdf
+        delete_on_termination: true
+      loop: "{{ ec2.instances }}"
+      register: ec2_vol
+      tags: "{'name':'jitsi-meet', 'env':'production'}"
+
+    - debug:
+        msg:
+          - "Server private IPv4: {{ item.private_ip }}"
+      when: not ansible_check_mode
+      loop: "{{ ec2.instances }}"

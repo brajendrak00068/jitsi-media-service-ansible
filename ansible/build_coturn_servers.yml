@@ -1,0 +1,113 @@
+---
+###
+# * Check the vars below and adjust "ORGANISATION", e.g. jitsi_organisation: "epfl"
+# * Source you openstack project credentials (normally jitsi-frontends)
+# * Run the playbook:
+#     ansible-playbook build_jitsi_server.yml -D
+###
+- name: Provision instance in AWS
+  hosts: localhost
+  vars_files:
+    - group_vars/all/vars.yaml
+  tasks:
+    - name: create security group for jitsi-meet
+      ec2_group:
+        name: jitsi-coturn
+        description: security group jitsi-meet
+        vpc_id: "{{ ec2_vpcid }}"
+        region: "{{ ec2_region }}"
+        rules:
+          - proto: tcp
+            from_port: 443
+            to_port: 443
+            cidr_ip: "0.0.0.0/0"
+          - proto: udp
+            from_port: 443
+            to_port: 443
+            cidr_ip: "0.0.0.0/0"
+          - proto: tcp
+            from_port: 443
+            to_port: 443
+            cidr_ipv6: "::/0"
+          - proto: udp
+            from_port: 443
+            to_port: 443
+            cidr_ipv6: "::/0"
+          - proto: tcp
+            from_port: 80
+            to_port: 443
+            cidr_ip: "0.0.0.0/0"
+          - proto: udp
+            from_port: 10000
+            to_port: 20000
+            cidr_ip: "0.0.0.0/0"
+            state: absent
+          - proto: udp
+            from_port: 10000
+            to_port: 20000
+            cidr_ipv6: "::/0"
+            state: absent
+        tags: "{'name':'jitsi-coturn', 'env':'production'}"
+
+    - name: create security group for ssh
+      ec2_group:
+        name: SSH
+        description: SSH security group
+        vpc_id: "{{ ec2_vpcid }}"
+        region: "{{ ec2_region }}"
+        rules:
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: "0.0.0.0/0"
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ipv6: ::/0
+        tags: "{'name':'SSH', 'env':'production'}"
+
+    - name: Create subnet for coturn servers
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{ ec2_vpcid }}"
+        cidr: 10.0.7.0/24
+        tags:
+          Name: coturn subnet
+      register: coturn_subnet
+
+    - name: Launch coturn instance
+      ec2:
+        keypair: "{{ ec2_keypair }}"
+        group: ['SSH', 'jitsi-coturn']
+        type: c5.large
+        image: ami-02d55cb47e83a99a0
+        region: "{{ ec2_region }}"
+        instance_tags: "{'name':'coturn', 'env':'production'}"
+        count: 1
+        wait: true
+        vpc_subnet_id: "{{ coturn_subnet.subnet.id }}"
+      when: not ansible_check_mode
+      register: ec2
+
+    - name: Create volume ec2 volume
+      ec2_vol:
+        instance: "{{ item.id }}"
+        volume_size: "20"
+        delete_on_termination: true
+        region: "{{ ec2_region }}"
+        device_name: /dev/sdf
+      loop: "{{ ec2.instances }}"
+      register: ec2_vol
+      instance_tags:
+        name: coturn
+        env: production
+      exact_count: 1
+      count_tag:
+        name: coturn
+        env: production
+
+    - debug:
+        msg:
+          - "Server private IPv4: {{ item.private_ip }}"
+      when: not ansible_check_mode
+      loop: "{{ ec2.instances }}"

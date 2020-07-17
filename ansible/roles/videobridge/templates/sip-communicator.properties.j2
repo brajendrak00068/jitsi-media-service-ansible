@@ -1,0 +1,52 @@
+org.ice4j.ice.harvest.DISABLE_AWS_HARVESTER=true
+org.jitsi.videobridge.DISABLE_TCP_HARVESTER=true
+{% if 'coturn' in groups and groups['coturn'][0] %}
+org.ice4j.ice.harvest.STUN_MAPPING_HARVESTER_ADDRESSES={{ hostvars[groups['coturn'][0]].inventory_hostname }}:443
+{% endif %}
+
+org.jitsi.jicofo.ALWAYS_TRUST_MODE_ENABLED=true
+org.jitsi.videobridge.ENABLE_REST_SHUTDOWN=true
+
+
+# Octo configuration
+{% if jitsi_octo_enabled %}
+org.jitsi.videobridge.octo.BIND_ADDRESS={{ ipify_public_ip }}
+org.jitsi.videobridge.octo.PUBLIC_ADDRESS={{ ipify_public_ip }}
+org.jitsi.videobridge.octo.BIND_PORT=4096
+org.jitsi.videobridge.REGION={{ jitsi_octo_region }}
+{% endif %}
+
+
+# the callstats credentials
+
+{% if callstats_io_appid %}
+io.callstats.sdk.CallStats.appId={{ callstats_io_appid }}
+io.callstats.sdk.CallStats.appSecret={{ callstats_io_secret }}
+org.jitsi.videobridge.STATISTICS_INTERVAL.callstats.io=60000
+io.callstats.sdk.CallStats.bridgeId={{ inventory_hostname }}
+{% endif %}
+
+
+# enable statistics and callstats statistics and the report interval
+
+org.jitsi.videobridge.ENABLE_STATISTICS=true
+{% if callstats_io_appid %}
+org.jitsi.videobridge.STATISTICS_TRANSPORT=muc,colibri,rest,callstats.io
+{% else %}
+org.jitsi.videobridge.STATISTICS_TRANSPORT=muc,colibri,rest
+{% endif %}
+org.jitsi.videobridge.STATISTICS_INTERVAL=5000
+
+{% for host in groups['jitsi'] %}
+org.jitsi.videobridge.xmpp.user.shard-{{ loop.index }}.HOSTNAME={{ hostvars[host].inventory_hostname }}
+org.jitsi.videobridge.xmpp.user.shard-{{ loop.index }}.DOMAIN=auth.{{ hostvars[host].inventory_hostname }}
+org.jitsi.videobridge.xmpp.user.shard-{{ loop.index }}.USERNAME=jvb
+org.jitsi.videobridge.xmpp.user.shard-{{ loop.index }}.PASSWORD={{ jitsi_meet_videobridge_password }}
+org.jitsi.videobridge.xmpp.user.shard-{{ loop.index }}.MUC_JIDS=JvbBrewery@internal.auth.{{ hostvars[host].inventory_hostname }}
+org.jitsi.videobridge.xmpp.user.shard-{{ loop.index }}.MUC_NICKNAME={{ inventory_hostname }}
+org.jitsi.videobridge.xmpp.user.shard-{{ loop.index }}.DISABLE_CERTIFICATE_VERIFICATION=true
+{% endfor %}
+
+org.jitsi.videobridge.rest.jetty.tls.port=443
+org.jitsi.videobridge.rest.jetty.sslContextFactory.keyStorePath=/path/to/keystore
+org.jitsi.videobridge.rest.jetty.sslContextFactory.keyStorePassword=changeme

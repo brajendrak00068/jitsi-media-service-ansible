@@ -1,0 +1,4 @@
+---
+jibri_recordings_dir: "/srv/recordings"
+jibri_jitsi_server: "{{ jitsi_fqdn }}"
+jibri_streaming_server_url: "rtmp://stream.meet.collabor8.xyz/LiveApp"

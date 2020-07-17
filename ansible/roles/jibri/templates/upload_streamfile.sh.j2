@@ -1,0 +1,41 @@
+#!/bin/bash
+
+echo "Uploading process was started...."
+RECORDINGS_DIR=$1
+
+# Initialization of the parameters
+if [ -d "$RECORDINGS_DIR" ]; then
+  FILE=$(/usr/bin/find $RECORDINGS_DIR -name "*.mp4" -type f -exec echo {} \;)
+
+  METADATA_FILE=$(/usr/bin/find $RECORDINGS_DIR -name "*.json" -type f -exec echo {} \;)
+  SPLIT_URL=$( cat $METADATA_FILE | jq .meeting_url | tr "/." "\n" )
+  BNAME="streams-"$( echo $SPLIT_URL | awk '{ print $2 }' )
+
+  METADATA_FILENAME=$( cat $METADATA_FILE | jq .filename | tr -d '"' )
+  if [ "$METADATA_FILENAME" == "null" ]; then
+    FILENAME=$(basename $FILE)
+  else
+    FILENAME="${METADATA_FILENAME}"
+  fi
+  echo "Filename is: s3://${BNAME}/${FILENAME}"
+fi
+
+CONFIG={{jibri_recording_S3_config_path}}
+
+if [ -f "$FILE" ] && [ -f "$CONFIG" ]; then
+    echo "Uploading the file: "$FILENAME
+    if [ -z "{{jibri_recording_S3_bucketname}}"]; then
+        echo "Bucket name is : "$BNAME
+        s3cmd -c $CONFIG mb s3://$BNAME >> /dev/null 2>&1
+        s3cmd -c $CONFIG put $FILE s3://$BNAME/$FILENAME
+    else
+        s3cmd -c $CONFIG mb s3://{{jibri_recording_S3_bucketname}} >> /dev/null 2>&1
+        s3cmd -c $CONFIG put $FILE s3://{{jibri_recording_S3_bucketname}}/$FILENAME
+    fi
+    echo "Upload completed!"
+else
+    echo "The file could not be saved. Missing config file or missing mp4 file."
+fi
+
+echo "Uploading script finished gracefully."
+exit 0

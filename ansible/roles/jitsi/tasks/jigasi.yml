@@ -1,0 +1,26 @@
+---
+
+- name: Install to google cloud for speech to text api
+  script: ../scripts/transcription.sh
+
+- name: Copy Jijagi config file.
+  template:
+    dest: /etc/jitsi/jigasi/config
+    src: logging.properties.j2
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart jigasi
+
+- name: Jijagi sip-communicator properties
+  become: yes
+  tags:
+    - jitsi
+    - conf
+  template:
+    src: jicofo_sip-communicator.properties.j2
+    dest: /etc/jitsi/jicofo/sip-communicator.properties
+    mode: 0600
+  notify: restart jijagi
+
+

@@ -1,0 +1,15 @@
+---
+# handlers for apache2 service
+
+- name: restart jitsi-videobridge
+  service:
+    name: jitsi-videobridge2
+    state: restarted
+  # Restart the service only if either there is no conference running or the status page is not enables (normally during the setup phase)
+  when: (( conferences.json is defined and conferences.json['conferences'] == 0 ) or ( colibristats.status is defined and colibristats.status != 200 )) # noqa 204
+
+- name: reload systemctl
+  systemd:
+    daemon_reload: yes
+  tags:
+    - jitsi

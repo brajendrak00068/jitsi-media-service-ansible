@@ -1,0 +1,11 @@
+
+- name: restart videobriges
+  hosts: videobridge
+  become: yes
+  tasks:
+    - name: "restart bridges"
+      service:
+        name: jitsi-videobridge2
+        state: restarted
+
+

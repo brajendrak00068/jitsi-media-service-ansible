@@ -1,0 +1,57 @@
+---
+
+# select which version of Jitsi to install. Valid:
+#  `stable` for the latest stable release
+#  `nightly` for the latest nightly release
+
+jitsi_version: nightly
+jitsi_meet_jicofo_secret: 'jicofo_secret'
+jitsi_meet_jicofo_password: 'jicofo_pw'
+jitsi_meet_jicofo_user: focus
+jitsi_meet_jicofo_port: 5347
+jitsi_meet_jicofo_loglevel: INFO
+
+jitsi_meet_apt_repos:
+  stable:
+    repo_url: 'deb https://download.jitsi.org/ stable/'
+  unstable:
+    repo_url: 'deb https://download.jitsi.org/ unstable/'
+
+jitsi_meet_debconf_settings:
+  - name: jitsi-meet-prosody
+    question: jitsi-meet-prosody/jvb-hostname
+    value: "{{ jitsi_fqdn }}"
+    vtype: string
+
+jitsi_packages:
+  - jicofo
+  - jigasi
+
+# jibri default settings
+jibri_enable: false
+jibri_recording: false
+jibri_streaming: false
+jibri_user_jibri_password: "jibriauthpass"
+jibri_user_recorder_password: "jibrirecorderpass"
+
+
+# Jigasi default settings
+# Default auth information, used in multiple service templates.
+jitsi_meet_jigasi_user: "jigasi"
+jitsi_meet_jigasi_password: "password"
+jitsi_meet_jigasi_secret: 'jitsi_meet_jigasi_secret'
+enable_auth: true
+enable_transcriptions: true
+jigasi_enable_sdes: true
+
+#jwt token authentication
+jwt_collabor8_app_id: "FKtjfDLU5oPnUdDDOCIopA"
+jwt_collabor8_app_secret: "FKtjfDLU5oPnUdDDOCIopA"
+jwt_accepted_issuers: "web_client, android_client, ios_client, cs_client"
+jwt_accepted_audiences: "my_server1, my_server2"
+
+# variables for jigasi advanced configutions
+jigasi_sip_uri: "jigasi@jigasi-collabor8.brajendra.n2.voximplant.com"
+jigasi_sip_password: "test1234"
+jigasi_sip_server: "jigasi-collabor8.brajendra.n2.voximplant.com"
+jigasi_sip_port: 5060

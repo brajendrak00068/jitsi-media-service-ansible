@@ -1,0 +1,97 @@
+
+--list of custom plugins path
+plugin_paths = { "/usr/share/jitsi-meet/prosody-plugins/" }
+
+-- list of accepted issuers/audiences for jwt
+asap_accepted_issuers = {{ jwt_accepted_issuers }}
+asap_accepted_audiences = {{ jwt_accepted_audiences }}
+
+--domain mapper options, must at least have domain base set to use the mapper
+muc_mapper_domain_base = "{{ jitsi_fqdn }}";
+
+--Credentials for coturn it will finally pass to client
+{% if 'coturn' in groups and groups['coturn'][0] %}
+turncredentials_secret = "{{ prosody_turncredentials_secret }}";
+turncredentials_port = 443;
+turncredentials_ttl = 86400;
+turncredentials = {
+  { type = "stun", host = "{{ hostvars[groups['coturn'][0]].inventory_hostname }}", port = "443" },
+  { type = "turn", host = "{{ hostvars[groups['coturn'][0]].inventory_hostname }}", port = "443", transport = "udp" },
+  { type = "turns", host = "{{ hostvars[groups['coturn'][0]].inventory_hostname }}", port = "443", transport = "tcp" }
+};
+{% endif %}
+
+
+-- Allow connections for any domain this will be helpfull other clients to client
+cross_domain_bosh = true;
+cross_domain_websocket = true
+
+
+-- To tell the prosody that secure connection stablished by proxy server
+consider_websocket_secure = true
+consider_bosh_secure = true;
+
+
+VirtualHost "{{ jitsi_fqdn }}"
+        authentication = "token";
+        app_id="{{collabor8_app_id}}"
+        app_secret="{{collabor8_app_secret}}"
+        speakerstats_component = "speakerstats.{{ jitsi_fqdn }}"
+        conference_duration_component = "conferenceduration.{{ jitsi_fqdn }}"
+
+        modules_enabled = {
+            "bosh";
+            "pubsub";
+            "ping";
+            "speakerstats";
+            "turncredentials";
+            "presence_identity";
+            "conference_duration";
+        }
+
+        c2s_require_encryption = false
+
+-- Is is responsible for new conference room creation with only focus user can create room
+Component "conference.{{ jitsi_fqdn }}" "muc"
+    storage = "memory"
+    modules_enabled = {
+        "muc_meeting_id";
+        "muc_domain_mapper";
+        "token_verification";
+    }
+    admins = { "focus@auth.{{ jitsi_fqdn }}" }
+    muc_room_locking = false
+    muc_room_default_public_jids = true
+
+
+Component "internal.auth.{{ jitsi_fqdn }}" "muc"
+    storage = "memory"
+    modules_enabled = {
+      "ping";
+    }
+    admins = { "focus@auth.{{ jitsi_fqdn }}", "jvb@auth.{{ jitsi_fqdn }}" }
+
+
+-- jicofo, jigasi will authenticate first then use secret to connect to component
+
+VirtualHost "auth.{{ jitsi_fqdn }}"
+    authentication = "internal_plain"
+
+Component "focus.{{ jitsi_fqdn }}"
+    component_secret = "{{ jitsi_meet_jicofo_secret }}"
+
+Component "speakerstats.{{ jitsi_fqdn }}" "speakerstats_component"
+    muc_component = "conference.{{ jitsi_fqdn }}"
+
+Component "conferenceduration.{{ jitsi_fqdn }}" "conference_duration_component"
+    muc_component = "conference.{{ jitsi_fqdn }}"
+
+Component "callcontrol.{{ jitsi_fqdn }}"
+    component_secret = "{{ jitsi_meet_jigasi_secret }}"
+
+VirtualHost "recorder.{{ jitsi_fqdn }}"
+    modules_enabled = {
+        "ping";
+    }
+    authentication = "internal_plain"
+    c2s_require_encryption = false

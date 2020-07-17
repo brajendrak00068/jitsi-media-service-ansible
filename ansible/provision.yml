@@ -1,0 +1,42 @@
+# Jitsi  deployment and configuration
+#
+#     ansible-galaxy install -fr roles/requirements.yml
+#
+---
+- name: configure jitsi meet server
+  hosts: jitsi
+  become: yes
+  roles:
+    - role: jitsi
+      tags: jitsi
+    - site24x7
+
+
+- name: configure videobridge
+  hosts: videobridge
+  become: yes
+  roles:
+    - role: jitsi
+      tags: jitsi
+    - site24x7
+
+
+- name: Configure Jibris
+  hosts: jibri
+  become: yes
+  roles:
+    - role: jibri
+      tags: jibri
+
+
+
+- name: Configure Coturn
+  hosts: coturn_server
+  become: yes
+  roles:
+    - role: certbot
+      tags: coturn
+    - role: coturn
+      tags: coturn
+    - role: site24x7
+      tags: coturn
