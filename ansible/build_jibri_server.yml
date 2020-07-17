@@ -1,10 +1,5 @@
 ---
-###
-# * Check the vars below and adjust "ORGANISATION", e.g. jitsi_organisation: "epfl"
-# * Source you openstack project credentials (normally jitsi-frontends)
-# * Run the playbook:
-#     ansible-playbook build_jitsi_server.yml -D
-###
+
 - name: Provision instance in AWS
   hosts: localhost
   vars_files:
