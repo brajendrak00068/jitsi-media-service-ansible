@@ -1,9 +1,7 @@
 # Jitsi  deployment and configuration
-#
-#     ansible-galaxy install -fr roles/requirements.yml
-#
+
 ---
-- name: configure jitsi meet server
+- name: configure jitsi server
   hosts: jitsi
   become: yes
   roles:

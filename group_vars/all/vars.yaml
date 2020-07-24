@@ -10,13 +10,20 @@ jitsi_octo_enable: true
 jitsi_octo_region: ap-south-1
 
 # provisioning of server monitoring.
-site24x7_device_key: "in_0c2c7aaa977f8322bad4782fb917c0fa"
+site24x7_device_key: in_0c2c7aaa977f8322bad4782fb917c0fa
 site24x7_proxy: NONE
 
 # callstats credentials
 callstats_io_appid: 362755832
-callstats_io_secret: "35m3dWbuVfsS:697mlFAJe+XYhGJj0GvvNe33+KNxpQ9oc2BN/9PgAxM="
+callstats_io_secret: 35m3dWbuVfsS:697mlFAJe+XYhGJj0GvvNe33+KNxpQ9oc2BN/9PgAxM=
 
 
-jitsi_meet_videobridge_password: 'vb_password'
-prosody_turncredentials_secret: 'turncredentials_secret'
+jitsi_meet_videobridge_password: vb_password
+prosody_turncredentials_secret: turncredentials_secret
+
+# aws related configurations
+ec2_region: ap-south-1
+ec2_vpcid: vpc-027c0312cdb633936
+ec2_keypair: collabor8-backend.pem
+
+

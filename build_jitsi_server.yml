@@ -108,6 +108,12 @@
           Name: jitsi meet subnet
       register: jitsi_meet_subnet
 
+    - name: try creating a key pair with name of an already existing keypair
+      ec2_key:
+        name: collabor8-backend.pem
+        key_material: "{{ key_material }}"
+        force: false
+
     - name: Launch jitsi meet instance
       ec2:
         keypair: "{{ ec2_keypair }}"
