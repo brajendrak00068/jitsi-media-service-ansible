@@ -1,4 +1,4 @@
-Install roles from ansible-galay 
+#Install roles from ansible-galay 
 ansible-galaxy install -fr roles/requirements.yml
 
 
