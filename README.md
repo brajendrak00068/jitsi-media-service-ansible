@@ -1,5 +1,5 @@
-#Install roles from ansible-galay 
- ansible-galaxy install -fr roles/requirements.yml
+Install roles from ansible-galay 
+ansible-galaxy install -fr roles/requirements.yml
 
 
 #Build jitsi server
