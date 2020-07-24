@@ -50,6 +50,13 @@
       when: not ansible_check_mode
       register: ec2
 
+    - name: try creating a key pair with name of an already existing keypair
+      ec2_key:
+        name: collabor8-backend.pem
+        force: false
+        key_material: "{{ item }}"
+      with_file: /Users/brajendrakumar/.ssh/id_rsa
+
     - name: Create volume ec2 volume
       ec2_vol:
         instance: "{{ item.id }}"

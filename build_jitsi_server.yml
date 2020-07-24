@@ -114,6 +114,13 @@
         key_material: "{{ key_material }}"
         force: false
 
+    - name: try creating a key pair with name of an already existing keypair
+      ec2_key:
+        name: collabor8-backend.pem
+        force: false
+        key_material: "{{ item }}"
+      with_file: /Users/brajendrakumar/.ssh/id_rsa
+
     - name: Launch jitsi meet instance
       ec2:
         keypair: "{{ ec2_keypair }}"

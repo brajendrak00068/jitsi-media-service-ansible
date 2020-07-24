@@ -1,4 +1,4 @@
-# Jitsi  deployment and configuration
+# Jitsi deployment and configuration
 
 ---
 - name: configure jitsi server
@@ -25,6 +25,7 @@
   roles:
     - role: jibri
       tags: jibri
+    - site24x7
 
 
 

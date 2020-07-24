@@ -1,6 +1,5 @@
 # ansible-galaxy install -r roles/requirements.yml
 ---
-
 - src: https://github.com/geerlingguy/ansible-role-certbot.git
   scm: git
   name: certbot
