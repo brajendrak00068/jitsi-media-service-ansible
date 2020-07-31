@@ -20,7 +20,7 @@
   tags:
     - jitsi
 
-- include: jitsi-meet.yml
+- include: copy-plugins.yml
   tags:
     - jitsi
 

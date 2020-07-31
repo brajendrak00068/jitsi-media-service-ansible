@@ -1,0 +1,11 @@
+---
+# Copy the original files. (accordingly force:no)
+- name: Copy prosody plugins
+  copy:
+    src: prosody-plugins
+    dest: /usr/share/
+    owner: root
+    group: root
+    creates: /usr/share
+  tags:
+    jitsi
